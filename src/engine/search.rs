@@ -39,8 +39,7 @@ use super::{
 };
 
 use super::{
-    evaluate::leaf_evaluate, limit::SearchLimit, pick::MovePicker, thread::SearchConfig,
-    transposition::TTable,
+    evaluate::leaf_evaluate, limit::SearchLimit, thread::SearchConfig, transposition::TTable,
 };
 
 use std::{cmp::max, sync::PoisonError};
@@ -152,8 +151,6 @@ struct PVSearch<'a> {
     game: ScoredGame,
     /// The transposition table.
     ttable: &'a TTable,
-    /// The set of "killer" moves. Each index corresponds to a depth (0 is most shallow, etc).
-    killer_moves: Vec<Move>,
     /// The cumulative number of nodes evaluated in this evaluation.
     num_nodes_evaluated: u64,
     /// The cumulative number of nodes visited since we last updated the limit.
@@ -180,7 +177,6 @@ impl<'a> PVSearch<'a> {
         PVSearch {
             game,
             ttable,
-            killer_moves: vec![Move::BAD_MOVE; usize::from(u8::MAX) + 1],
             num_nodes_evaluated: 0,
             nodes_since_limit_update: 0,
             config,
@@ -317,12 +313,14 @@ impl<'a> PVSearch<'a> {
             }
         }
 
-        let moves_iter = MovePicker::new(
-            *self.game.board(),
-            self.game.cookie(),
-            tt_move,
-            self.killer_moves.get(depth_so_far as usize).copied(),
-        );
+        let mut moves_iter = self.game.get_moves::<{ GenMode::All }>();
+        moves_iter.sort_by_key(|&(m, (_, candidacy))| {
+            if Some(m) == tt_move {
+                Eval::MIN
+            } else {
+                -candidacy
+            }
+        });
         let mut best_move = Move::BAD_MOVE;
         let mut best_score = Eval::MIN;
 
@@ -538,7 +536,7 @@ impl<'a> PVSearch<'a> {
 
         let mut best_score = score;
         let mut moves = self.game.get_moves::<{ GenMode::Captures }>();
-        moves.sort_by_cached_key(|&(_, (_, eval))| -eval);
+        moves.sort_by_key(|&(_, (_, eval))| -eval);
         let mut child_line = Vec::new();
 
         for (m, tag) in moves {
@@ -569,7 +567,6 @@ impl<'a> PVSearch<'a> {
                     }
                     if beta <= score {
                         // Beta cutoff, we have ound a better line somewhere else
-                        self.killer_moves[depth_so_far as usize] = m;
                         break;
                     }
 
