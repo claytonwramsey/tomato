@@ -1,13 +1,13 @@
 /*
-  Fiddler, a UCI-compatible chess engine.
+  Tomato, a UCI-compatible chess engine.
   Copyright (C) 2022 Clayton Ramsey.
 
-  Fiddler is free software: you can redistribute it and/or modify
+  Tomato is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  Fiddler is distributed in the hope that it will be useful,
+  Tomato is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
@@ -114,7 +114,7 @@ impl Board {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// use fiddler::base::Board;
+    /// use tomato::base::Board;
     ///
     /// let default_board = Board::new();
     /// let fen_board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")?;
@@ -287,7 +287,7 @@ impl Board {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Board, Bitboard};
+    /// use tomato::base::{Board, Bitboard};
     ///
     /// let board = Board::new();
     /// assert_eq!(board.occupancy(), Bitboard::new(0xFFFF00000000FFFF));
@@ -304,7 +304,7 @@ impl Board {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Board, Piece, Square};
+    /// use tomato::base::{Board, Piece, Square};
     ///
     /// let board = Board::new();
     /// assert_eq!(board.type_at_square(Square::E1), Some(Piece::King));
@@ -322,7 +322,7 @@ impl Board {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Board, Color, Square};
+    /// use tomato::base::{Board, Color, Square};
     ///
     /// let board = Board::new();
     /// assert_eq!(board.color_at_square(Square::E1), Some(Color::White));
@@ -348,7 +348,7 @@ impl Board {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// use fiddler::base::{Board, Move, Square};
+    /// use tomato::base::{Board, Move, Square};
     ///
     /// // Scandinavian defense. White can play exd5 to capture Black's pawn or
     /// // play e5 (among other moves).
@@ -424,7 +424,7 @@ impl Board {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// use fiddler::base::{Board, Move, Square};
+    /// use tomato::base::{Board, Move, Square};
     ///
     /// let mut board = Board::new();
     /// // board after 1. e4 is played
@@ -640,7 +640,7 @@ impl Board {
     ///
     /// ```
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// use fiddler::base::Board;
+    /// use tomato::base::Board;
     ///
     /// // Start position of the game is not a draw.
     /// let board0 = Board::new();

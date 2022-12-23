@@ -1,13 +1,13 @@
 /*
-  Fiddler, a UCI-compatible chess engine.
+  Tomato, a UCI-compatible chess engine.
   Copyright (C) 2022 Clayton Ramsey.
 
-  Fiddler is free software: you can redistribute it and/or modify
+  Tomato is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  Fiddler is distributed in the hope that it will be useful,
+  Tomato is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
@@ -263,7 +263,7 @@ impl AttacksTable {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square, MAGIC};
+    /// use tomato::base::{Bitboard, Square, MAGIC};
     ///
     /// assert_eq!(MAGIC.rook_attacks(Bitboard::EMPTY, Square::A1), Bitboard::hv(Square::A1));
     /// ```
@@ -277,7 +277,7 @@ impl AttacksTable {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square, MAGIC};
+    /// use tomato::base::{Bitboard, Square, MAGIC};
     ///
     /// assert_eq!(MAGIC.bishop_attacks(Bitboard::EMPTY, Square::E4), Bitboard::diags(Square::E4));
     /// ```

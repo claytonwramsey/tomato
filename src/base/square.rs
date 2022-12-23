@@ -1,13 +1,13 @@
 /*
-  Fiddler, a UCI-compatible chess engine.
+  Tomato, a UCI-compatible chess engine.
   Copyright (C) 2022 Clayton Ramsey.
 
-  Fiddler is free software: you can redistribute it and/or modify
+  Tomato is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  Fiddler is distributed in the hope that it will be useful,
+  Tomato is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
@@ -153,7 +153,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::Square;
+    /// use tomato::base::Square;
     ///
     /// let sq1 = Square::A8;
     /// let sq2 = Square::C1;
@@ -172,7 +172,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::Square;
+    /// use tomato::base::Square;
     ///
     /// let sq1 = Square::A8;
     /// let sq2 = Square::C1;
@@ -190,7 +190,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::Square;
+    /// use tomato::base::Square;
     /// let sq1 = Square::A1;
     /// let sq2 = sq1.opposite();
     /// assert_eq!(sq2, Square::A8);
@@ -252,7 +252,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::Square;
+    /// use tomato::base::Square;
     ///
     /// assert_eq!(Square::A1.file_name(), 'a');
     /// assert_eq!(Square::E4.file_name(), 'e');

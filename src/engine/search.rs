@@ -1,13 +1,13 @@
 /*
-  Fiddler, a UCI-compatible chess engine.
+  Tomato, a UCI-compatible chess engine.
   Copyright (C) 2022 Clayton Ramsey.
 
-  Fiddler is free software: you can redistribute it and/or modify
+  Tomato is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  Fiddler is distributed in the hope that it will be useful,
+  Tomato is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
@@ -19,8 +19,8 @@
 //! Primary search algorithms.
 //!
 //! All chess engines do some sort of tree searching, and as a classical engine,
-//! Fiddler uses a variation of Minimax search.
-//! In this case, Fiddler uses principal-variation search, which runs in
+//! Tomato uses a variation of Minimax search.
+//! In this case, Tomato uses principal-variation search, which runs in
 //! Omega(b^{d/2}) time, so long as the move ordering is correct and causes the
 //! most critical moves to be searched first at each depth.
 //!
@@ -345,9 +345,6 @@ impl<'a> PVSearch<'a> {
         for (m, tag) in moves_iter {
             move_count += 1;
             self.game.make_move(m, &tag);
-            // Prefetch the next transposition table entry as early as possible
-            // (~12 Elo)
-            self.ttable.prefetch(self.game.board().hash);
             let mut score = Eval::MIN;
 
             if !PV || move_count > 1 {
@@ -555,9 +552,6 @@ impl<'a> PVSearch<'a> {
 
         for (m, tag) in moves {
             self.game.make_move(m, &tag);
-            // Prefetch the next transposition table entry as early as possible
-            // (~12 Elo)
-            self.ttable.prefetch(self.game.board().hash);
             // zero-window search
             score = -self.quiesce::<false>(
                 depth_so_far + 1,

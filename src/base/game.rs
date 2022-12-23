@@ -1,13 +1,13 @@
 /*
-  Fiddler, a UCI-compatible chess engine.
+  Tomato, a UCI-compatible chess engine.
   Copyright (C) 2022 Clayton Ramsey.
 
-  Fiddler is free software: you can redistribute it and/or modify
+  Tomato is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  Fiddler is distributed in the hope that it will be useful,
+  Tomato is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
@@ -307,7 +307,7 @@ impl<T: Tagger> TaggedGame<T> {
     /// However, `g2` is over because it repeated the same position twice in a search.
     ///
     /// ```
-    /// use fiddler::base::{game::Game, Move, Square};
+    /// use tomato::base::{game::Game, Move, Square};
     ///
     /// let mut g1 = Game::new();
     /// let mut g2 = Game::new();

@@ -1,13 +1,13 @@
 /*
-  Fiddler, a UCI-compatible chess engine.
+  Tomato, a UCI-compatible chess engine.
   Copyright (C) 2022 Clayton Ramsey.
 
-  Fiddler is free software: you can redistribute it and/or modify
+  Tomato is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  Fiddler is distributed in the hope that it will be useful,
+  Tomato is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
@@ -34,7 +34,7 @@ use super::{
 /// # Examples
 ///
 /// ```
-/// use fiddler::base::{movegen::KNIGHT_MOVES, Square, Bitboard};
+/// use tomato::base::{movegen::KNIGHT_MOVES, Square, Bitboard};
 ///
 /// let mut knight_attacks_a1 = Bitboard::EMPTY
 ///     .with_square(Square::C2)
@@ -50,7 +50,7 @@ pub const KNIGHT_MOVES: [Bitboard; 64] = create_step_attacks(&Direction::KNIGHT_
 /// # Examples
 ///
 /// ```
-/// use fiddler::base::{movegen::KING_MOVES, Square, Bitboard};
+/// use tomato::base::{movegen::KING_MOVES, Square, Bitboard};
 ///
 /// let mut king_attacks_a1 = Bitboard::EMPTY
 ///     .with_square(Square::A2)
@@ -72,7 +72,7 @@ pub const KING_MOVES: [Bitboard; 64] = create_step_attacks(&Direction::KING_STEP
 /// # Examples
 ///
 /// ```
-/// use fiddler::base::{movegen::PAWN_ATTACKS, Color, Square, Bitboard};
+/// use tomato::base::{movegen::PAWN_ATTACKS, Color, Square, Bitboard};
 ///
 /// let mut attacked_squares = Bitboard::EMPTY
 ///     .with_square(Square::A4)
@@ -146,7 +146,7 @@ pub enum GenMode {
 /// # Examples
 ///
 /// ```
-/// use fiddler::base::{Board, Move, movegen::is_legal, Square};
+/// use tomato::base::{Board, Move, movegen::is_legal, Square};
 ///
 /// let board = Board::new();
 /// assert!(is_legal(Move::normal(Square::E2, Square::E4), &board));
@@ -313,7 +313,7 @@ pub fn is_legal(m: Move, b: &Board) -> bool {
 ///
 /// `T` is a tagger for moves: it contains a callback function to tag moves as
 /// they are generated so that the user can save on total heap allocations.
-/// If no tag is needed, you can use `fiddler::base::game::NoTag` to avoid
+/// If no tag is needed, you can use `tomato::base::game::NoTag` to avoid
 /// wasting effort tagging each move.
 ///
 /// `get_moves()` will make no regard to whether the position is drawn by
@@ -323,7 +323,7 @@ pub fn is_legal(m: Move, b: &Board) -> bool {
 ///
 /// Generate all legal moves:
 /// ```
-/// use fiddler::base::{Board, game::NoTag, movegen::{GenMode, is_legal, get_moves}};
+/// use tomato::base::{Board, game::NoTag, movegen::{GenMode, is_legal, get_moves}};
 ///
 /// let b = Board::new();
 /// for (m, _) in get_moves::<{GenMode::All}, NoTag>(&b, &()) {
@@ -334,7 +334,7 @@ pub fn is_legal(m: Move, b: &Board) -> bool {
 /// Generate captures:
 /// ```
 /// # fn main() -> Result<(), Box<dyn std::error::Error>>{
-/// use fiddler::base::{Board, game::NoTag, Move, movegen::{GenMode, is_legal, get_moves}, Square};
+/// use tomato::base::{Board, game::NoTag, Move, movegen::{GenMode, is_legal, get_moves}, Square};
 ///
 /// // Scandinavian defense. The only legal capture is exd5.
 /// let b = Board::from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2")?;
@@ -350,7 +350,7 @@ pub fn is_legal(m: Move, b: &Board) -> bool {
 /// Generate quiet moves:
 ///
 /// ```
-/// use fiddler::base::{Board, game::NoTag, movegen::{GenMode, is_legal, get_moves}};
+/// use tomato::base::{Board, game::NoTag, movegen::{GenMode, is_legal, get_moves}};
 ///
 /// let b = Board::new();
 /// for (m, _) in get_moves::<{GenMode::Quiets}, NoTag>(&b, &()) {
@@ -397,7 +397,7 @@ pub fn get_moves<const M: GenMode, T: Tagger>(
 /// # Examples
 ///
 /// ```
-/// use fiddler::base::{Board, movegen::has_moves};
+/// use tomato::base::{Board, movegen::has_moves};
 ///
 /// let b = Board::new();
 /// assert!(has_moves(&b));
@@ -543,7 +543,7 @@ pub fn has_moves(b: &Board) -> bool {
 /// # Examples
 ///
 /// ```
-/// use fiddler::base::{Board, Square, Color, movegen::is_square_attacked_by};
+/// use tomato::base::{Board, Square, Color, movegen::is_square_attacked_by};
 ///
 /// let b = Board::new();
 /// assert!(is_square_attacked_by(&b, Square::E2, Color::White));
@@ -641,7 +641,7 @@ fn evasions<const M: GenMode, T: Tagger>(
 /// # Examples
 ///
 /// ```
-/// use fiddler::base::{Bitboard, Board, Square, Color, movegen::square_attackers};
+/// use tomato::base::{Bitboard, Board, Square, Color, movegen::square_attackers};
 ///
 /// let b = Board::new();
 /// let attackers = Bitboard::EMPTY
@@ -1017,7 +1017,7 @@ fn castles<T: Tagger>(b: &Board, cookie: &T::Cookie, moves: &mut Vec<(Move, T::T
 /// # Examples
 ///
 /// ```
-/// use fiddler::base::movegen::perft;
+/// use tomato::base::movegen::perft;
 ///
 /// // Use the starting position FEN and calculate the number of legal moves.
 ///

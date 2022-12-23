@@ -1,13 +1,13 @@
 /*
-  Fiddler, a UCI-compatible chess engine.
+  Tomato, a UCI-compatible chess engine.
   Copyright (C) 2022 Clayton Ramsey.
 
-  Fiddler is free software: you can redistribute it and/or modify
+  Tomato is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  Fiddler is distributed in the hope that it will be useful,
+  Tomato is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
@@ -22,7 +22,7 @@
 //! engine's duty to decide how much to use when making each move.
 //! More sophisticated engines do an analysis of the position and guess its complexity, giving
 //! themselves more time in positions which are more complex.
-//! For now, Fiddler is not so intelligent, and instead rations time to itself indiscriminately.
+//! For now, Tomato is not so intelligent, and instead rations time to itself indiscriminately.
 
 use std::cmp::min;
 

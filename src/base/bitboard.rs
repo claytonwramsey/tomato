@@ -1,13 +1,13 @@
 /*
-  Fiddler, a UCI-compatible chess engine.
+  Tomato, a UCI-compatible chess engine.
   Copyright (C) 2022 Clayton Ramsey.
 
-  Fiddler is free software: you can redistribute it and/or modify
+  Tomato is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  Fiddler is distributed in the hope that it will be useful,
+  Tomato is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
@@ -46,7 +46,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// let sq = Square::A1; // this could be any square
     /// assert!(!Bitboard::EMPTY.contains(sq));
@@ -61,7 +61,7 @@ impl Bitboard {
     ///
     /// Basic usage:
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// let sq = Square::A1;
     /// assert!(Bitboard::ALL.contains(sq));
@@ -69,7 +69,7 @@ impl Bitboard {
     ///
     /// Use as an iterator over all squares:
     /// ```
-    /// use fiddler::base::{Bitboard};
+    /// use tomato::base::{Bitboard};
     ///
     /// for sq in Bitboard::ALL {
     ///     println!("Now visiting square {sq}!");
@@ -87,7 +87,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// let bb = Bitboard::EMPTY.with_square(Square::A1);
     ///
@@ -104,7 +104,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// assert!(Bitboard::new(1).contains(Square::A1));
     /// assert!(!(Bitboard::new(2).contains(Square::A1)));
@@ -119,7 +119,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// let bb = Bitboard::EMPTY.with_square(Square::A1);
     /// assert!(bb.contains(Square::A1));
@@ -136,7 +136,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// let bb1 = Bitboard::EMPTY;
     /// let bb2 = bb1.with_square(Square::A1);
@@ -156,7 +156,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// let mut bb = Bitboard::EMPTY;
     /// assert_eq!(bb.len(), 0);
@@ -191,7 +191,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// let mut bb = Bitboard::EMPTY;
     /// assert!(bb.is_empty());
@@ -210,7 +210,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// let mut bb = Bitboard::EMPTY;
     /// assert!(!bb.has_single_bit());
@@ -231,7 +231,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// let mut bb = Bitboard::EMPTY;
     /// assert!(!bb.more_than_one());
@@ -392,7 +392,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// let sq = Square::F1;
     /// let mut diag = Bitboard::EMPTY
@@ -433,7 +433,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// let sq = Square::A3;
     /// let mut diag = Bitboard::EMPTY
@@ -475,7 +475,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// let bb = Bitboard::EMPTY
     ///     .with_square(Square::A1)
@@ -502,7 +502,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// let bb = Bitboard::EMPTY
     ///     .with_square(Square::A1)
@@ -530,7 +530,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// assert_eq!(
     ///     Bitboard::hv(Square::A1),
@@ -562,7 +562,7 @@ impl Bitboard {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::base::{Bitboard, Square};
+    /// use tomato::base::{Bitboard, Square};
     ///
     /// assert_eq!(
     ///     Bitboard::diags(Square::E4),

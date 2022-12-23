@@ -1,13 +1,13 @@
 /*
-  Fiddler, a UCI-compatible chess engine.
+  Tomato, a UCI-compatible chess engine.
   Copyright (C) 2022 Clayton Ramsey.
 
-  Fiddler is free software: you can redistribute it and/or modify
+  Tomato is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  Fiddler is distributed in the hope that it will be useful,
+  Tomato is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
@@ -22,16 +22,16 @@
 //! Every leaf of the search is statically evaluated, and based on the comparisons of each
 //! evaluation, the full minimax search is achieved.
 //!
-//! Fiddler uses a classical approach to static evaluation: the final evaluation is the sum of a
+//! Tomato uses a classical approach to static evaluation: the final evaluation is the sum of a
 //! number of rules.
 //! Each rule contributes a quantity to the evaluation.
 //!
-//! Also like other engines, Fiddler uses a "tapered" evaluation: rules are given different weights
+//! Also like other engines, Tomato uses a "tapered" evaluation: rules are given different weights
 //! at different phases of the game.
 //! To prevent sharp changes in evaluation as the phase blends, a "midgame" and "endgame" evaluation
 //! is created, and then the final evaluation is a linear combination of those two.
 //!
-//! More uniquely, Fiddler is obsessed with cumulative evaluation.
+//! More uniquely, Tomato is obsessed with cumulative evaluation.
 //! Often, learning facts about a board is lengthy and difficult
 //! (in computer time - it takes nanoseconds in wall time).
 //! However, it is generally easy to guess what effect a move will have on the
@@ -73,7 +73,7 @@ pub mod pst;
 /// # Examples
 ///
 /// ```
-/// use fiddler::engine::evaluate::Eval;
+/// use tomato::engine::evaluate::Eval;
 /// let mate_eval = Eval::mate_in(3);
 /// let draw_eval = Eval::DRAW;
 /// assert!(mate_eval > draw_eval);
@@ -98,7 +98,7 @@ pub type ScoredGame = TaggedGame<ScoreTag>;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 /// A piece of metadata which tags along with each board.
-/// In the Fiddler engine, every board gets tagged with an `EvalCookie` which is used to quickly
+/// In the Tomato engine, every board gets tagged with an `EvalCookie` which is used to quickly
 /// evaluate positions.
 pub struct EvalCookie {
     /// The score of the position.
@@ -231,8 +231,8 @@ fn leaf_rules(b: &Board) -> Score {
 ///
 /// ```
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// use fiddler::base::Board;
-/// use fiddler::engine::evaluate::net_open_rooks;
+/// use tomato::base::Board;
+/// use tomato::engine::evaluate::net_open_rooks;
 ///
 /// assert_eq!(net_open_rooks(&Board::new()), 0);
 /// assert_eq!(net_open_rooks(&Board::from_fen("5r2/4r3/2k5/8/3K4/8/4p3/4R3 w - - 0 1")?), -1);
@@ -290,8 +290,8 @@ pub fn net_open_rooks(b: &Board) -> i8 {
 ///
 /// ```
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// use fiddler::base::Board;
-/// use fiddler::engine::evaluate::net_doubled_pawns;
+/// use tomato::base::Board;
+/// use tomato::engine::evaluate::net_doubled_pawns;
 ///
 /// assert_eq!(net_doubled_pawns(&Board::new()), 0);
 /// # Ok(())
@@ -328,8 +328,8 @@ pub fn net_doubled_pawns(b: &Board) -> i8 {
 /// # Examples
 ///
 /// ```
-/// use fiddler::base::Board;
-/// use fiddler::engine::evaluate::phase_of;
+/// use tomato::base::Board;
+/// use tomato::engine::evaluate::phase_of;
 ///
 /// assert!(phase_of(&Board::new()).eq(&1.0));
 /// ```
@@ -361,7 +361,7 @@ impl Eval {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::engine::evaluate::Eval;
+    /// use tomato::engine::evaluate::Eval;
     ///
     /// assert!(Eval::MIN < Eval::BLACK_MATE);
     /// assert!(Eval::MIN < Eval::DRAW);
@@ -375,7 +375,7 @@ impl Eval {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::engine::evaluate::Eval;
+    /// use tomato::engine::evaluate::Eval;
     ///
     /// assert!(Eval::MIN < Eval::MAX);
     /// assert!(Eval::BLACK_MATE < Eval::MAX);
@@ -389,7 +389,7 @@ impl Eval {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::engine::evaluate::Eval;
+    /// use tomato::engine::evaluate::Eval;
     ///
     /// assert!(Eval::MIN < Eval::BLACK_MATE);
     /// assert!(Eval::BLACK_MATE < Eval::DRAW);
@@ -403,7 +403,7 @@ impl Eval {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::engine::evaluate::Eval;
+    /// use tomato::engine::evaluate::Eval;
     ///
     /// assert!(Eval::MIN < Eval::WHITE_MATE);
     /// assert!(Eval::BLACK_MATE < Eval::WHITE_MATE);
@@ -458,7 +458,7 @@ impl Eval {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::engine::evaluate::Eval;
+    /// use tomato::engine::evaluate::Eval;
     /// let current_eval = Eval::mate_in(0);
     /// let previous_ply_eval = current_eval.step_back_by(1);
     /// assert_eq!(previous_ply_eval, Eval::mate_in(1));
@@ -502,7 +502,7 @@ impl Eval {
     /// # Examples
     ///
     /// ```
-    /// use fiddler::engine::evaluate::Eval;
+    /// use tomato::engine::evaluate::Eval;
     /// let ev1 = Eval::pawns(2.5);
     /// let ev2 = Eval::mate_in(3);
     /// assert_eq!(ev1.moves_to_mate(), None);

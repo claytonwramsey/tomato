@@ -1,13 +1,13 @@
 /*
-  Fiddler, a UCI-compatible chess engine.
+  Tomato, a UCI-compatible chess engine.
   Copyright (C) 2022 Clayton Ramsey.
 
-  Fiddler is free software: you can redistribute it and/or modify
+  Tomato is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  Fiddler is distributed in the hope that it will be useful,
+  Tomato is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
@@ -16,7 +16,7 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-//! The tuner for the Fiddler chess engine.
+//! The tuner for the Tomato chess engine.
 //! This file exists to create a binary which can be used to generate weights from an annotated EPD
 //! file.
 //!
@@ -35,14 +35,14 @@ use std::{
     time::Instant,
 };
 
-use fiddler::engine::evaluate::{
+use tomato::engine::evaluate::{
     material,
     mobility::{ATTACKS_VALUE, MAX_MOBILITY},
     net_doubled_pawns, net_open_rooks,
     pst::PST,
     DOUBLED_PAWN_VALUE, KINGSIDE_CASTLE_VALUE, OPEN_ROOK_VALUE, QUEENSIDE_CASTLE_VALUE,
 };
-use fiddler::{
+use tomato::{
     base::{
         movegen::{KING_MOVES, KNIGHT_MOVES, PAWN_ATTACKS},
         Board, Color, Piece, Square, MAGIC,

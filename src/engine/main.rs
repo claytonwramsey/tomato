@@ -1,13 +1,13 @@
 /*
-  Fiddler, a UCI-compatible chess engine.
+  Tomato, a UCI-compatible chess engine.
   Copyright (C) 2022 Clayton Ramsey.
 
-  Fiddler is free software: you can redistribute it and/or modify
+  Tomato is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  Fiddler is distributed in the hope that it will be useful,
+  Tomato is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
@@ -32,8 +32,8 @@ use std::{
     time::Duration,
 };
 
-use fiddler::base::{game::Tagger, Color};
-use fiddler::engine::{
+use tomato::base::{game::Tagger, Color};
+use tomato::engine::{
     evaluate::{ScoreTag, ScoredGame},
     thread::MainSearch,
     time::get_search_time,
@@ -43,7 +43,7 @@ use fiddler::engine::{
 /// The default size of the transposition table.
 const DEFAULT_HASH_SIZE_MB: usize = 500;
 
-/// Run the Fiddler UCI engine.
+/// Run the Tomato UCI engine.
 fn main() {
     // whether we are in debug mode
     let mut debug = false;
@@ -80,7 +80,7 @@ fn main() {
                         Message::Id {
                             // we trust that the build script actually did its job
                             // and created the git hash environment variable
-                            name: Some(concat!("Fiddler 0.1.0 (", env!("GIT_HASH"), ")")),
+                            name: Some(concat!("Tomato 0.1.0 (", env!("GIT_HASH"), ")")),
                             author: Some("Clayton Ramsey"),
                         }
                     );
