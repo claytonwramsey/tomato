@@ -35,18 +35,9 @@ use std::{
     time::Instant,
 };
 
-use tomato::engine::evaluate::{
-    material,
-    mobility::{ATTACKS_VALUE, MAX_MOBILITY},
-    net_doubled_pawns, net_open_rooks,
-    pst::PST,
-    DOUBLED_PAWN_VALUE, KINGSIDE_CASTLE_VALUE, OPEN_ROOK_VALUE, QUEENSIDE_CASTLE_VALUE,
-};
+use tomato::engine::evaluate::{material, pst::PST};
 use tomato::{
-    base::{
-        movegen::{KING_MOVES, KNIGHT_MOVES, PAWN_ATTACKS},
-        Board, Color, Piece, Square, MAGIC,
-    },
+    base::{Board, Color, Piece, Square},
     engine::evaluate::{EG_LIMIT, MG_LIMIT},
 };
 
@@ -242,49 +233,12 @@ fn load_weights() -> Weights {
         }
     }
 
-    for pt in Piece::ALL {
-        for count in 0..MAX_MOBILITY {
-            let score = ATTACKS_VALUE[pt as usize][count];
-            weights
-                .rule_values
-                .push((score.mg.float_val(), score.eg.float_val()));
-        }
-    }
-
-    weights.rule_values.push((
-        DOUBLED_PAWN_VALUE.mg.float_val(),
-        DOUBLED_PAWN_VALUE.eg.float_val(),
-    ));
-
-    weights.rule_values.push((
-        OPEN_ROOK_VALUE.mg.float_val(),
-        OPEN_ROOK_VALUE.eg.float_val(),
-    ));
-
-    weights.rule_values.push((
-        KINGSIDE_CASTLE_VALUE.mg.float_val(),
-        KINGSIDE_CASTLE_VALUE.eg.float_val(),
-    ));
-
-    weights.rule_values.push((
-        QUEENSIDE_CASTLE_VALUE.mg.float_val(),
-        QUEENSIDE_CASTLE_VALUE.eg.float_val(),
-    ));
-
     weights
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::similar_names)]
 /// Print out a weights vector so it can be used as code.
 fn print_weights(weights: &Weights) {
-    let print_rule = |name: &str, idx: usize| {
-        println!(
-            "pub const {name}: Score = Score::centipawns({}, {});",
-            (weights.rule_values[idx].0 * 100.) as i16,
-            (weights.rule_values[idx].1 * 100.) as i16,
-        );
-    };
-
     println!(
         "pub const MG_LIMIT: Eval = Eval::centipawns({})",
         (weights.phase_cutoffs.0 * 100.) as i16
@@ -328,37 +282,6 @@ fn print_weights(weights: &Weights) {
         println!("    ],");
     }
     println!("]) }};");
-
-    offset += 384;
-    println!("-----");
-
-    // print mobility
-    println!(
-        "pub const ATTACKS_VALUE: [[Score; MAX_MOBILITY]; Piece::NUM] = unsafe {{ transmute(["
-    );
-    for pt in Piece::ALL {
-        let pt_idx = offset + MAX_MOBILITY * pt as usize;
-        println!("    [ // {pt}");
-        for count in 0..MAX_MOBILITY {
-            let fscore = weights.rule_values[pt_idx + count];
-            println!(
-                "        ({}, {}), ",
-                (fscore.0 * 100.) as i16,
-                (fscore.1 * 100.) as i16
-            );
-        }
-        println!("    ],");
-    }
-    println!("]) }};");
-
-    offset += 168;
-    println!("-----");
-
-    // print potpourri
-    print_rule("DOUBLED_PAWN_VALUE", offset);
-    print_rule("OPEN_ROOK_VALUE", offset + 1);
-    print_rule("KINGSIDE_CASTLE_VALUE", offset + 2);
-    print_rule("QUEENSIDE_CASTLE_VALUE", offset + 3);
 }
 
 #[allow(
@@ -383,7 +306,7 @@ fn extract(b: &Board) -> BoardFeatures {
             rules.push((pt as usize, f32::from(net)));
         }
     }
-    let mut offset = 5;
+    let offset = 5;
 
     // Get piece-square quantities
     for pt in Piece::ALL {
@@ -399,135 +322,9 @@ fn extract(b: &Board) -> BoardFeatures {
         }
     }
 
-    // New offset after everything in the PST.
-    offset += 384;
-    extract_mobility(b, &mut rules, offset);
-
-    // Offset after mobility.
-    offset += 168;
-
-    // Doubled pawns
-    let doubled_count = net_doubled_pawns(b);
-    if doubled_count != 0 {
-        rules.push((offset, f32::from(doubled_count)));
-    }
-    offset += 1;
-
-    // Open rooks
-    let open_rook_count = net_open_rooks(b);
-    if open_rook_count != 0 {
-        rules.push((offset, f32::from(open_rook_count)));
-    }
-    offset += 1;
-
-    // Add gains from castling rights
-    let kingside_net = i8::from(b.castle_rights.kingside(b.player))
-        - i8::from(b.castle_rights.kingside(!b.player));
-    if kingside_net != 0 {
-        rules.push((offset, f32::from(kingside_net)));
-    }
-    offset += 1;
-
-    let queenside_net = i8::from(b.castle_rights.queenside(b.player));
-    if queenside_net != 0 {
-        rules.push((offset, f32::from(queenside_net)));
-    }
-    // offset += 1;
-
     BoardFeatures {
         piece_counts,
         rules,
-    }
-}
-
-/// Helper function to extract mobility information into the sparse feature vector.
-/// Adds 168 new features.
-fn extract_mobility(b: &Board, rules: &mut Vec<(usize, f32)>, offset: usize) {
-    let white = b[Color::White];
-    let black = b[Color::Black];
-    let not_white = !white;
-    let not_black = !black;
-    let occupancy = white | black;
-    let mut count = [[0i8; MAX_MOBILITY]; Piece::NUM];
-
-    // count knight moves
-    let knights = b[Piece::Knight];
-    for sq in knights & white {
-        let idx = usize::from((KNIGHT_MOVES[sq as usize] & not_white).len());
-        count[Piece::Knight as usize][idx] += 1;
-    }
-    for sq in knights & black {
-        let idx = usize::from((KNIGHT_MOVES[sq as usize] & not_black).len());
-        count[Piece::Knight as usize][idx] -= 1;
-    }
-
-    // count bishop moves
-    let bishops = b[Piece::Bishop];
-    for sq in bishops & white {
-        let idx = usize::from((MAGIC.bishop_attacks(occupancy, sq) & not_white).len());
-        count[Piece::Bishop as usize][idx] += 1;
-    }
-    for sq in bishops & black {
-        let idx = usize::from((MAGIC.bishop_attacks(occupancy, sq) & not_black).len());
-        count[Piece::Bishop as usize][idx] -= 1;
-    }
-
-    // count rook moves
-    let rooks = b[Piece::Rook];
-    for sq in rooks & white {
-        let idx = usize::from((MAGIC.rook_attacks(occupancy, sq) & not_white).len());
-        count[Piece::Rook as usize][idx] += 1;
-    }
-    for sq in rooks & black {
-        let idx = usize::from((MAGIC.rook_attacks(occupancy, sq) & not_black).len());
-        count[Piece::Rook as usize][idx] -= 1;
-    }
-
-    // count queen moves
-    let queens = b[Piece::Queen];
-    for sq in queens & white {
-        let idx = usize::from(
-            ((MAGIC.rook_attacks(occupancy, sq) | MAGIC.bishop_attacks(occupancy, sq)) & not_white)
-                .len(),
-        );
-        count[Piece::Queen as usize][idx] += 1;
-    }
-    for sq in rooks & black {
-        let idx = usize::from(
-            ((MAGIC.rook_attacks(occupancy, sq) | MAGIC.bishop_attacks(occupancy, sq)) & not_black)
-                .len(),
-        );
-        count[Piece::Queen as usize][idx] -= 1;
-    }
-
-    // count net pawn moves
-    // pawns can't capture by pushing, so we only examine their capture squares
-    let pawns = b[Piece::Pawn];
-    for sq in pawns & white {
-        let idx = usize::from((PAWN_ATTACKS[Color::White as usize][sq as usize] & not_white).len());
-        count[Piece::Pawn as usize][idx] += 1;
-    }
-    for sq in pawns & black {
-        let idx = usize::from((PAWN_ATTACKS[Color::Black as usize][sq as usize] & not_black).len());
-        count[Piece::Pawn as usize][idx] -= 1;
-    }
-
-    // king
-    let white_king_idx =
-        usize::from((KING_MOVES[b.king_sqs[Color::White as usize] as usize] & not_white).len());
-    count[Piece::King as usize][white_king_idx] += 1;
-    let black_king_idx =
-        usize::from((KING_MOVES[b.king_sqs[Color::Black as usize] as usize] & not_black).len());
-    count[Piece::King as usize][black_king_idx] -= 1;
-
-    for pt in Piece::ALL {
-        for idx in 0..MAX_MOBILITY {
-            let num_mobile = count[pt as usize][idx];
-            if num_mobile != 0 {
-                let feature_idx = offset + (MAX_MOBILITY * pt as usize + idx);
-                rules.push((feature_idx, f32::from(num_mobile)));
-            }
-        }
     }
 }
 

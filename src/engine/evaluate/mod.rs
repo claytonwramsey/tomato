@@ -46,13 +46,12 @@ use std::{
 
 use crate::base::{
     game::{TaggedGame, Tagger},
-    Bitboard, Board, Color, Move, Piece,
+    Board, Color, Move, Piece,
 };
 
 use super::pick::candidacy;
 
 pub mod material;
-pub mod mobility;
 pub mod pst;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Hash)]
@@ -175,150 +174,11 @@ pub const MG_LIMIT: Eval = Eval::centipawns(2408);
 /// The cutoff for pure endgame material.
 pub const EG_LIMIT: Eval = Eval::centipawns(1348);
 
-/// Mask containing ones along the A file.
-/// Bitshifting left by a number from 0 through 7 will cause it to become a mask for each file.
-const A_FILE_MASK: Bitboard = Bitboard::new(0x0101_0101_0101_0101);
-
-/// The value of having your own pawn doubled.
-pub const DOUBLED_PAWN_VALUE: Score = Score::centipawns(-21, -21);
-/// The value of having a rook with no same-colored pawns in front of it which are not advanced past
-/// the 3rd rank.
-pub const OPEN_ROOK_VALUE: Score = Score::centipawns(26, 27);
-
-/// The value of having the right to castle kingside.
-pub const KINGSIDE_CASTLE_VALUE: Score = Score::centipawns(0, 0);
-
-/// The value of having the right to castle queenside.
-pub const QUEENSIDE_CASTLE_VALUE: Score = Score::centipawns(1, 1);
-
 #[must_use]
 #[allow(clippy::module_name_repetitions)]
 /// Evaluate a leaf position on a game whose cumulative values have been computed correctly.
 pub fn leaf_evaluate(g: &ScoredGame) -> Eval {
-    let b = g.board();
-    (leaf_rules(b) + g.cookie().score).blend(g.cookie().phase)
-}
-
-/// Get the score gained from evaluations that are only performed at the leaf.
-fn leaf_rules(b: &Board) -> Score {
-    let mut score = Score::DRAW;
-
-    // Add gains from castling rights
-    let kingside_net = i8::from(b.castle_rights.kingside(b.player))
-        - i8::from(b.castle_rights.kingside(!b.player));
-    score += KINGSIDE_CASTLE_VALUE * kingside_net;
-
-    let queenside_net = i8::from(b.castle_rights.queenside(b.player))
-        - i8::from(b.castle_rights.queenside(!b.player));
-    score -= QUEENSIDE_CASTLE_VALUE * queenside_net;
-
-    // Add losses due to doubled pawns
-    score += DOUBLED_PAWN_VALUE * net_doubled_pawns(b);
-
-    // Add gains from open rooks
-    score += OPEN_ROOK_VALUE * net_open_rooks(b);
-    score += mobility::evaluate(b);
-
-    score
-}
-
-#[must_use]
-/// Count the number of "open" rooks (i.e., those which are not blocked by unadvanced pawns) in a
-/// position.
-/// The number is a net value, so it will be negative if Black has more open rooks than White.
-///
-/// # Examples
-///
-/// ```
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// use tomato::base::Board;
-/// use tomato::engine::evaluate::net_open_rooks;
-///
-/// assert_eq!(net_open_rooks(&Board::new()), 0);
-/// assert_eq!(net_open_rooks(&Board::from_fen("5r2/4r3/2k5/8/3K4/8/4p3/4R3 w - - 0 1")?), -1);
-/// # Ok(())
-/// # }
-/// ```
-pub fn net_open_rooks(b: &Board) -> i8 {
-    // Mask for pawns which are below rank 3 (i.e. on the white half of the board).
-    const WHITE_HALF: Bitboard = Bitboard::new(0x0000_0000_FFFF_FFFF);
-    // Mask for pawns which are on the black half of the board
-    const BLACK_HALF: Bitboard = Bitboard::new(0xFFFF_FFFF_0000_0000);
-    let mut net_open_rooks = 0i8;
-    let rooks = b[Piece::Rook];
-    let pawns = b[Piece::Pawn];
-    let white = b[Color::White];
-    let black = b[Color::Black];
-
-    // count white rooks
-    for wrook_sq in rooks & white {
-        if wrook_sq.rank() >= 3 {
-            net_open_rooks += 1;
-            continue;
-        }
-        let pawns_in_col = (pawns & white) & (A_FILE_MASK << wrook_sq.file());
-        let important_pawns = WHITE_HALF & pawns_in_col;
-        // check that the forward-most pawn of the important pawns is in front of or behind the rook
-        if important_pawns.leading_zeros() > (63 - (wrook_sq as u32)) {
-            // all the important pawns are behind the rook
-            net_open_rooks += 1;
-        }
-    }
-
-    // count black rooks
-    for brook_sq in rooks & black {
-        if brook_sq.rank() <= 4 {
-            net_open_rooks -= 1;
-            continue;
-        }
-        let pawns_in_col = (pawns & black) & (A_FILE_MASK << brook_sq.file());
-        let important_pawns = BLACK_HALF & pawns_in_col;
-        // check that the lowest-rank pawn that could block the rook is behind the rook
-        if important_pawns.trailing_zeros() > brook_sq as u32 {
-            net_open_rooks -= 1;
-        }
-    }
-
-    net_open_rooks
-}
-
-#[must_use]
-/// Count the number of doubled pawns, in net.
-/// For instance, if White had 1 doubled pawn, and Black had 2, this function would return -1.
-///
-/// # Examples
-///
-/// ```
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// use tomato::base::Board;
-/// use tomato::engine::evaluate::net_doubled_pawns;
-///
-/// assert_eq!(net_doubled_pawns(&Board::new()), 0);
-/// # Ok(())
-/// # }
-/// ```
-pub fn net_doubled_pawns(b: &Board) -> i8 {
-    let pawns = b[Piece::Pawn];
-    let mut net_doubled: i8 = 0;
-    // all ones on the A column, shifted left by the col
-    let mut col_mask = Bitboard::new(0x0101_0101_0101_0101);
-    #[allow(clippy::cast_possible_wrap)]
-    for _ in 0..8 {
-        let col_pawns = pawns & col_mask;
-
-        net_doubled -= match (b[Color::Black] & col_pawns).len() {
-            0 => 0,
-            x => x as i8 - 1,
-        };
-        net_doubled += match (b[Color::White] & col_pawns).len() {
-            0 => 0,
-            x => x as i8 - 1,
-        };
-
-        col_mask <<= 1;
-    }
-
-    net_doubled
+    g.cookie().score.blend(g.cookie().phase)
 }
 
 #[must_use]
