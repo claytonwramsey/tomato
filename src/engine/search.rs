@@ -340,38 +340,16 @@ impl<'a> PVSearch<'a> {
                 // For moves which are not the first move searched at a PV node, or for moves which
                 // are not in a PV node, perform a zero-window search of the position.
 
-                // Late move reduction:
-                // search positions which are unlikely to be the PV at a lower depth.
-                // ~400 Elo
-                let do_lmr = REDUCE && move_count > 2;
-
-                let depth_to_search = if do_lmr {
-                    depth_to_go - 3
-                } else {
-                    depth_to_go - 1
-                };
-
                 score = -self.pvs::<false, false, REDUCE>(
-                    depth_to_search,
+                    depth_to_go - 1,
                     depth_so_far + 1,
                     -alpha - Eval::centipawns(1),
                     -alpha,
                     &mut child_line,
                 )?;
-
-                // if the LMR search causes an alpha cutoff, ZW search again at full depth.
-                if score > alpha && do_lmr {
-                    score = -self.pvs::<false, false, REDUCE>(
-                        depth_to_go - 1,
-                        depth_so_far + 1,
-                        -alpha - Eval::centipawns(1),
-                        -alpha,
-                        &mut child_line,
-                    )?;
-                }
             }
 
-            if PV && (move_count == 1 || (alpha < score && score < beta)) {
+            if PV && (move_count == 1 || alpha < score && score < beta) {
                 // Either this is the first move on a PV node, or the previous search returned a PV
                 // candidate.
                 score = -self.pvs::<true, false, REDUCE>(
@@ -686,7 +664,7 @@ pub mod tests {
     fn eval_start() {
         let info = search_helper(
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-            8,
+            5,
         );
         println!("best move: {} [{}]", info.pv[0], info.eval);
     }
@@ -697,7 +675,7 @@ pub mod tests {
     fn fried_liver() {
         let info = search_helper(
             "r1bq1b1r/ppp2kpp/2n5/3np3/2B5/8/PPPP1PPP/RNBQK2R w KQ - 0 7",
-            9,
+            5,
         );
         let m = Move::normal(Square::D1, Square::F3);
         assert_eq!(info.pv[0], m);
@@ -709,7 +687,7 @@ pub mod tests {
     fn endgame() {
         search_helper(
             "2k5/pp3pp1/2p1pr2/Pn2b3/1P1P1P1r/2p1P1N1/6R1/3R2K1 w - - 0 1",
-            6,
+            5,
         );
     }
 
@@ -735,7 +713,7 @@ pub mod tests {
         eval_helper(
             "2r2r2/3p1p1k/p3p1p1/3P3n/q3P1Q1/1p5P/1PP2R2/1K4R1 w - - 0 30",
             Eval::mate_in(9),
-            11,
+            9,
         );
     }
 

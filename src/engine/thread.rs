@@ -233,7 +233,7 @@ mod tests {
     fn search_opening() {
         search_helper(
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-            10,
+            6,
         );
     }
 
@@ -241,7 +241,7 @@ mod tests {
     fn search_fried_liver() {
         search_helper(
             "r1bq1b1r/ppp2kpp/2n5/3np3/2B5/8/PPPP1PPP/RNBQK2R w KQ - 0 7",
-            10,
+            6,
         );
     }
 }
