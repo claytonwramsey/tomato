@@ -49,7 +49,6 @@ fn main() {
     let mut debug = false;
     let searcher = RwLock::new(MainSearch::new());
     let mut game = ScoredGame::new();
-    searcher.write().unwrap().config.n_helpers = 0;
     searcher
         .write()
         .unwrap()
@@ -88,15 +87,6 @@ fn main() {
                     // add options
 
                     add_option(
-                        "Thread Count",
-                        OptionType::Spin {
-                            default: 1,
-                            min: 1,
-                            max: 255,
-                        },
-                    );
-
-                    add_option(
                         "Hash",
                         OptionType::Spin {
                             default: DEFAULT_HASH_SIZE_MB as i64,
@@ -116,13 +106,6 @@ fn main() {
                     println!("{}", Message::ReadyOk);
                 }
                 Command::SetOption { name, value } => match name.as_str() {
-                    "Thread Count" => match value {
-                        None => debug_info("error: no value given for number of threads", debug),
-                        Some(num_str) => match num_str.parse::<u8>() {
-                            Ok(n) => searcher.write().unwrap().config.n_helpers = n - 1,
-                            _ => debug_info("error: illegal parameter for `Thread Count`", debug),
-                        },
-                    },
                     "Hash" => match value {
                         None => debug_info("error: no value given for hashsize", debug),
                         Some(size_str) => match size_str.parse::<usize>() {

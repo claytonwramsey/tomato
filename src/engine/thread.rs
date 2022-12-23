@@ -42,9 +42,6 @@ use super::{
 pub struct SearchConfig {
     /// The depth at which this algorithm will evaluate a position.
     pub depth: u8,
-    /// The number of helper threads.
-    /// If this value is 0, then the search is single-threaded.
-    pub n_helpers: u8,
     /// The number of moves at each layer which will be searched to a full depth, as opposed to a
     /// lower-than-target depth.
     pub num_early_moves: usize,
@@ -58,7 +55,6 @@ impl SearchConfig {
     pub fn new() -> SearchConfig {
         SearchConfig {
             depth: 10,
-            n_helpers: 0,
             num_early_moves: 4,
             limit_update_increment: 100,
         }
@@ -224,7 +220,6 @@ mod tests {
     fn search_helper(fen: &str, depth: u8) {
         let mut g = ScoredGame::from_fen(fen).unwrap();
         let mut main = MainSearch::new();
-        main.config.n_helpers = 0;
         main.config.depth = depth;
         main.ttable.resize(1000);
         let info = main.evaluate(&g).unwrap();
