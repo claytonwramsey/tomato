@@ -23,7 +23,7 @@
 //! The main search also collects all of the output from each individual search and composes it into
 //! a single easily-used structure for consumption in the main process.
 
-use std::{thread::scope, time::Instant};
+use std::time::Instant;
 
 use super::{
     evaluate::{Eval, ScoredGame},
@@ -72,11 +72,11 @@ impl Default for SearchConfig {
 }
 
 #[derive(Debug)]
-/// The primary search thread for an engine.
+/// A convenient wrapper for searching a game.
 pub struct MainSearch {
     /// The configuration of the search, controlling the search parameters.
     pub config: SearchConfig,
-    /// The transposition table, shared across all search threads.
+    /// The transposition table.
     pub ttable: TTable,
     /// The limit to the search.
     pub limit: SearchLimit,
@@ -109,81 +109,54 @@ impl MainSearch {
 
         // The previous iteration's evaluation, used for windowing
         let mut prev_eval = None;
-        scope(|s| {
-            for depth in 1..=self.config.depth {
-                // iterative deepening
+        for depth in 1..=self.config.depth {
+            // now it's our turn to think
+            let sub_result = self.aspiration_search(g, depth, prev_eval);
 
-                let mut handles = Vec::new();
-
-                for _thread_id in 0..self.config.n_helpers {
-                    handles
-                        .push(s.spawn(move || self.aspiration_search(g, depth, false, prev_eval)));
-                }
-
-                // now it's our turn to think
-                let mut sub_result = self.aspiration_search(g, depth, true, prev_eval);
-
-                for handle in handles {
-                    let eval_result = handle.join().map_err(|_| SearchError::Join)?;
-
-                    match (&mut sub_result, &eval_result) {
-                        // if this is our first successful thread, use its result
-                        (Err(_), Ok(_)) => sub_result = eval_result.clone(),
-                        // if both were successful, use the deepest result
-                        (Ok(ref mut best_search), Ok(ref new_search)) => {
-                            best_search.unify_with(new_search);
-                        }
-                        _ => (),
-                        // error cases cause nothing to happen
-                    };
-                }
-
-                if sub_result.is_ok() {
-                    // update best result and inform GUI
-                    best_result = sub_result;
-                    let elapsed = tic.elapsed();
-                    if let Ok(ref best_info) = best_result {
-                        prev_eval = Some(best_info.eval);
-                        #[allow(clippy::cast_possible_truncation)]
-                        {
-                            println!(
-                                "{}",
-                                Message::Info(&[
-                                    EngineInfo::Depth(best_info.depth),
-                                    EngineInfo::Score {
-                                        eval: best_info.eval,
-                                        is_lower_bound: false,
-                                        is_upper_bound: false
-                                    },
-                                    EngineInfo::Nodes(best_info.num_nodes_evaluated),
-                                    EngineInfo::NodeSpeed(
-                                        1000 * best_info.num_nodes_evaluated
-                                            / (elapsed.as_millis() + 1) as u64
-                                    ),
-                                    EngineInfo::Time(elapsed),
-                                    EngineInfo::Pv(&best_info.pv),
-                                    EngineInfo::HashFull(self.ttable.fill_rate_permill()),
-                                    EngineInfo::SelDepth(best_info.selective_depth),
-                                ])
-                            );
-                        }
+            if sub_result.is_ok() {
+                // update best result and inform GUI
+                best_result = sub_result;
+                let elapsed = tic.elapsed();
+                if let Ok(ref best_info) = best_result {
+                    prev_eval = Some(best_info.eval);
+                    #[allow(clippy::cast_possible_truncation)]
+                    {
+                        println!(
+                            "{}",
+                            Message::Info(&[
+                                EngineInfo::Depth(best_info.depth),
+                                EngineInfo::Score {
+                                    eval: best_info.eval,
+                                    is_lower_bound: false,
+                                    is_upper_bound: false
+                                },
+                                EngineInfo::Nodes(best_info.num_nodes_evaluated),
+                                EngineInfo::NodeSpeed(
+                                    1000 * best_info.num_nodes_evaluated
+                                        / (elapsed.as_millis() + 1) as u64
+                                ),
+                                EngineInfo::Time(elapsed),
+                                EngineInfo::Pv(&best_info.pv),
+                                EngineInfo::HashFull(self.ttable.fill_rate_permill()),
+                                EngineInfo::SelDepth(best_info.selective_depth),
+                            ])
+                        );
                     }
                 }
             }
+        }
 
-            if let Ok(ref mut info) = best_result {
-                // normalize evaluation to be in absolute terms
-                info.eval = info.eval.in_perspective(g.board().player);
-            }
-            best_result
-        })
+        if let Ok(ref mut info) = best_result {
+            // normalize evaluation to be in absolute terms
+            info.eval = info.eval.in_perspective(g.board().player);
+        }
+        best_result
     }
 
     fn aspiration_search(
         &self,
         g: &ScoredGame,
         depth: u8,
-        main: bool,
         prev_eval: Option<Eval>,
     ) -> SearchResult {
         if let Some(ev) = prev_eval {
@@ -212,7 +185,6 @@ impl MainSearch {
                 &self.ttable,
                 &self.config,
                 &self.limit,
-                main,
                 alpha,
                 beta,
             );
@@ -230,7 +202,6 @@ impl MainSearch {
             &self.ttable,
             &self.config,
             &self.limit,
-            main,
             Eval::MIN,
             Eval::MAX,
         )

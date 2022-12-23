@@ -81,8 +81,6 @@ pub type SearchResult = Result<SearchInfo, SearchError>;
 /// * `config`: the configuration of this search.
 /// * `limit`:the search limiter, which will be interiorly mutated by this
 ///     function.
-/// * `is_main`: whether or not this search is the "main" search or a subjugate
-///     thread, and determines responsibilities as such.
 /// * `alpha`: a lower bound on the evaluation.
 ///     This is primarily intended to be used for aspiration windowing, and in
 ///     most cases will be set to `Eval::MIN`.
@@ -95,12 +93,11 @@ pub fn search(
     ttable: &TTable,
     config: &SearchConfig,
     limit: &SearchLimit,
-    is_main: bool,
     alpha: Eval,
     beta: Eval,
 ) -> SearchResult {
     g.start_search();
-    let mut searcher = PVSearch::new(g, ttable, config, limit, is_main);
+    let mut searcher = PVSearch::new(g, ttable, config, limit);
     let mut pv = Vec::new();
 
     let eval = searcher.pvs::<true, true, true>(depth as i8, 0, alpha, beta, &mut pv)?;
@@ -165,8 +162,6 @@ struct PVSearch<'a> {
     config: &'a SearchConfig,
     /// The limit to this search.
     limit: &'a SearchLimit,
-    /// Whether this search is the main search.
-    is_main: bool,
     /// The highest depth to which any line was searched.
     selective_depth: u8,
 }
@@ -181,7 +176,6 @@ impl<'a> PVSearch<'a> {
         ttable: &'a TTable,
         config: &'a SearchConfig,
         limit: &'a SearchLimit,
-        is_main: bool,
     ) -> PVSearch<'a> {
         PVSearch {
             game,
@@ -191,7 +185,6 @@ impl<'a> PVSearch<'a> {
             nodes_since_limit_update: 0,
             config,
             limit,
-            is_main,
             selective_depth: 0,
         }
     }
@@ -249,9 +242,7 @@ impl<'a> PVSearch<'a> {
         // verify that ROOT implies PV
         debug_assert!(if ROOT { PV } else { true });
 
-        if self.is_main {
-            self.limit.update_time()?;
-        }
+        self.limit.update_time()?;
 
         if self.limit.is_over() {
             return Err(SearchError::Timeout);
@@ -671,7 +662,6 @@ pub mod tests {
             &TTable::with_size(1000),
             &config,
             &SearchLimit::default(),
-            true,
             Eval::MIN,
             Eval::MAX,
         )
@@ -710,7 +700,7 @@ pub mod tests {
     fn fried_liver() {
         let info = search_helper(
             "r1bq1b1r/ppp2kpp/2n5/3np3/2B5/8/PPPP1PPP/RNBQK2R w KQ - 0 7",
-            8,
+            9,
         );
         let m = Move::normal(Square::D1, Square::F3);
         assert_eq!(info.pv[0], m);
@@ -768,7 +758,6 @@ pub mod tests {
                 ..Default::default()
             },
             &SearchLimit::new(),
-            true,
             Eval::MIN,
             Eval::MAX,
         )
