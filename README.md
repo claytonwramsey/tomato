@@ -70,10 +70,6 @@ In my case, the path to the binary is `./target/x86_64-pc-windows-gnu/release/en
 
 ## UCI options supported
 
-- `Thread Count`: Set the number of worker threads for searching.
-  _Warning_: since there are currently no heuristics for differentiating search threads, increasing
-  `Thread Count` to more than 1 will likely reduce perfomance.
-
 - `Hash`: Set the transposition table size, in megabytes.
 
 ## License
