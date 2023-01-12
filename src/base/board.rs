@@ -122,7 +122,7 @@ impl Board {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn from_fen(fen: &str) -> Result<Board, &str> {
+    pub fn from_fen(fen: &str) -> Result<Board, &'static str> {
         let mut board = Board {
             sides: [Bitboard::EMPTY; 2],
             pieces: [Bitboard::EMPTY; 6],

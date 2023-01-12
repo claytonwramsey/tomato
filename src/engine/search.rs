@@ -28,13 +28,20 @@
 //! search is performed to exhaust all captures in the position, preventing the
 //! mis-evaluation of positions with hanging pieces.
 
-use crate::base::{
-    movegen::{has_moves, is_legal, GenMode},
-    Move,
+use crate::{
+    base::{
+        game::Game,
+        movegen::{has_moves, is_legal, GenMode},
+        Move,
+    },
+    engine::{
+        evaluate::{material, phase_of, pst},
+        pick::candidacy,
+    },
 };
 
 use super::{
-    evaluate::{Eval, ScoredGame},
+    evaluate::Eval,
     transposition::{TTEntry, TTEntryGuard},
 };
 
@@ -87,7 +94,7 @@ pub type SearchResult = Result<SearchInfo, SearchError>;
 ///     This is primarily intended to be used for aspiration windowing, and in
 ///     most cases will be set to `Eval::MAX`.
 pub fn search(
-    mut g: ScoredGame,
+    g: Game,
     depth: u8,
     ttable: &TTable,
     config: &SearchConfig,
@@ -95,7 +102,6 @@ pub fn search(
     alpha: Eval,
     beta: Eval,
 ) -> SearchResult {
-    g.start_search();
     let mut searcher = PVSearch::new(g, ttable, config, limit);
     let mut pv = Vec::new();
 
@@ -148,7 +154,7 @@ impl SearchInfo {
 /// search.
 struct PVSearch<'a> {
     /// The game being searched.
-    game: ScoredGame,
+    game: Game,
     /// The transposition table.
     ttable: &'a TTable,
     /// The cumulative number of nodes evaluated in this evaluation.
@@ -169,7 +175,7 @@ impl<'a> PVSearch<'a> {
     /// `is_main` is whether the thread is a main search, responsible for certain synchronization
     /// activities.
     pub fn new(
-        game: ScoredGame,
+        game: Game,
         ttable: &'a TTable,
         config: &'a SearchConfig,
         limit: &'a SearchLimit,
@@ -314,11 +320,13 @@ impl<'a> PVSearch<'a> {
         }
 
         let mut moves_iter = self.game.get_moves::<{ GenMode::All }>();
-        moves_iter.sort_by_key(|&(m, (_, candidacy))| {
+        let b = self.game.board();
+        let phase = phase_of(b);
+        moves_iter.sort_by_cached_key(|&m| {
             if Some(m) == tt_move {
                 Eval::MIN
             } else {
-                -candidacy
+                -candidacy(b, m, pst::delta(b, m) + material::delta(b, m), phase)
             }
         });
         let mut best_move = Move::BAD_MOVE;
@@ -331,9 +339,9 @@ impl<'a> PVSearch<'a> {
         let mut overwrote_alpha = false;
         // The principal variation line, following the best move.
         let mut child_line = Vec::new();
-        for (m, tag) in moves_iter {
+        for m in moves_iter {
             move_count += 1;
-            self.game.make_move(m, &tag);
+            self.game.make_move(m);
             let mut score = Eval::MIN;
 
             if !PV || move_count > 1 {
@@ -514,11 +522,16 @@ impl<'a> PVSearch<'a> {
 
         let mut best_score = score;
         let mut moves = self.game.get_moves::<{ GenMode::Captures }>();
-        moves.sort_by_key(|&(_, (_, eval))| -eval);
+
+        let b = self.game.board();
+        let phase = phase_of(b);
+        moves.sort_by_cached_key(|&m| {
+            -candidacy(b, m, pst::delta(b, m) + material::delta(b, m), phase)
+        });
         let mut child_line = Vec::new();
 
-        for (m, tag) in moves {
-            self.game.make_move(m, &tag);
+        for m in moves {
+            self.game.make_move(m);
             // zero-window search
             score = -self.quiesce::<false>(
                 depth_so_far + 1,
@@ -617,8 +630,7 @@ fn ttable_store(
 pub mod tests {
 
     use super::*;
-    use crate::base::{game::Tagger, Move, Square};
-    use crate::engine::evaluate::ScoreTag;
+    use crate::base::{Move, Square};
 
     /// Helper function to search a position at a given depth.
     ///
@@ -626,7 +638,7 @@ pub mod tests {
     ///
     /// This function will panic if searching the position fails or the game is invalid.
     fn search_helper(fen: &str, depth: u8) -> SearchInfo {
-        let mut g = ScoredGame::from_fen(fen).unwrap();
+        let mut g = Game::from_fen(fen).unwrap();
         let config = SearchConfig {
             depth,
             ..Default::default()
@@ -646,7 +658,7 @@ pub mod tests {
         for &m in &info.pv {
             println!("{m}");
             assert!(is_legal(m, g.board()));
-            g.make_move(m, &ScoreTag::tag_move(m, g.board(), g.cookie()));
+            g.make_move(m);
         }
 
         info
@@ -721,7 +733,7 @@ pub mod tests {
     /// Test that the transposition table contains an entry for the root node of the search.
     fn ttable_populated() {
         let ttable = TTable::with_size(1);
-        let g = ScoredGame::new();
+        let g = Game::new();
         let depth = 5;
 
         let search_info = search(

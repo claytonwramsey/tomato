@@ -32,9 +32,8 @@ use std::{
     time::Duration,
 };
 
-use tomato::base::{game::Tagger, Color};
+use tomato::base::{game::Game, Color};
 use tomato::engine::{
-    evaluate::{ScoreTag, ScoredGame},
     thread::MainSearch,
     time::get_search_time,
     uci::{Command, EngineInfo, GoOption, Message, OptionType},
@@ -48,7 +47,7 @@ fn main() {
     // whether we are in debug mode
     let mut debug = false;
     let searcher = RwLock::new(MainSearch::new());
-    let mut game = ScoredGame::new();
+    let mut game = Game::new();
     searcher
         .write()
         .unwrap()
@@ -118,7 +117,7 @@ fn main() {
                     _ => debug_info(&format!("error: unknown option key `{name}`"), debug),
                 },
                 Command::NewGame => {
-                    game = ScoredGame::new();
+                    game = Game::new();
                     // stop previous search
                     stop(&searcher, search_handle, debug);
                     search_handle = None;
@@ -128,12 +127,11 @@ fn main() {
                 }
                 Command::Position { fen, moves } => {
                     game = match fen {
-                        None => ScoredGame::new(),
-                        Some(fen) => ScoredGame::from_fen(&fen).unwrap(),
+                        None => Game::new(),
+                        Some(fen) => Game::from_fen(&fen).unwrap(),
                     };
                     for m in moves {
-                        game.try_move(m, &ScoreTag::tag_move(m, game.board(), game.cookie()))
-                            .unwrap();
+                        game.try_move(m).unwrap();
                     }
 
                     debug_info(&format!("current game: {}", game.board()), debug);
@@ -164,7 +162,7 @@ fn main() {
 fn go<'a>(
     opts: &[GoOption],
     searcher: &'a RwLock<MainSearch>,
-    game: &ScoredGame,
+    game: &Game,
     thread_scope: &'a Scope<'a, '_>,
     debug: bool,
 ) -> Option<ScopedJoinHandle<'a, ()>> {

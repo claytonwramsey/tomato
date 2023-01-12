@@ -191,12 +191,12 @@ mod tests {
     fn delta_helper(fen: &str) {
         let mut g = Game::from_fen(fen).unwrap();
         let orig_eval = evaluate(g.board());
-        for (m, _) in g.get_moves::<{ GenMode::All }>() {
+        for m in g.get_moves::<{ GenMode::All }>() {
             let new_eval = match g.board().player {
                 Color::White => orig_eval + delta(g.board(), m),
                 Color::Black => orig_eval - delta(g.board(), m),
             };
-            g.make_move(m, &());
+            g.make_move(m);
             // println!("{g}");
             assert_eq!(new_eval, evaluate(g.board()));
             g.undo().unwrap();

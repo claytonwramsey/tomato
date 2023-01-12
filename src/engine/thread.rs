@@ -25,8 +25,10 @@
 
 use std::time::Instant;
 
+use crate::base::game::Game;
+
 use super::{
-    evaluate::{Eval, ScoredGame},
+    evaluate::Eval,
     uci::{EngineInfo, Message},
 };
 
@@ -99,7 +101,7 @@ impl MainSearch {
     /// OS interrupt.
     /// However, a timeout error is most likely if the search times out before it can do any
     /// computation.
-    pub fn evaluate(&self, g: &ScoredGame) -> SearchResult {
+    pub fn evaluate(&self, g: &Game) -> SearchResult {
         let tic = Instant::now();
         let mut best_result = Err(SearchError::Timeout);
 
@@ -149,12 +151,7 @@ impl MainSearch {
         best_result
     }
 
-    fn aspiration_search(
-        &self,
-        g: &ScoredGame,
-        depth: u8,
-        prev_eval: Option<Eval>,
-    ) -> SearchResult {
+    fn aspiration_search(&self, g: &Game, depth: u8, prev_eval: Option<Eval>) -> SearchResult {
         if let Some(ev) = prev_eval {
             // we have a previous score we can use to window this search
             let (alpha, beta) = if ev.is_mate() {
@@ -213,19 +210,19 @@ impl Default for MainSearch {
 #[cfg(any(test, bench))]
 mod tests {
 
-    use crate::{base::movegen::is_legal, engine::evaluate::Score};
+    use crate::base::movegen::is_legal;
 
     use super::*;
 
     fn search_helper(fen: &str, depth: u8) {
-        let mut g = ScoredGame::from_fen(fen).unwrap();
+        let mut g = Game::from_fen(fen).unwrap();
         let mut main = MainSearch::new();
         main.config.depth = depth;
         main.ttable.resize(1000);
         let info = main.evaluate(&g).unwrap();
         for m in info.pv {
             assert!(is_legal(m, g.board()));
-            g.make_move(m, &(Score::DRAW, Eval::DRAW));
+            g.make_move(m);
         }
     }
 

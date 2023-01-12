@@ -30,26 +30,13 @@
 //! at different phases of the game.
 //! To prevent sharp changes in evaluation as the phase blends, a "midgame" and "endgame" evaluation
 //! is created, and then the final evaluation is a linear combination of those two.
-//!
-//! More uniquely, Tomato is obsessed with cumulative evaluation.
-//! Often, learning facts about a board is lengthy and difficult
-//! (in computer time - it takes nanoseconds in wall time).
-//! However, it is generally easy to guess what effect a move will have on the
-//! static evaluation of a position.
-//! We therefore tag moves with their effect on the evaluation,
-//! allowing us to cheaply evaluate the final leaf position.
 
 use std::{
     fmt::{Display, Formatter},
     ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-use crate::base::{
-    game::{TaggedGame, Tagger},
-    Board, Color, Move, Piece,
-};
-
-use super::pick::candidacy;
+use crate::base::{game::Game, Board, Color, Piece};
 
 pub mod material;
 pub mod pst;
@@ -90,84 +77,6 @@ pub struct Score {
     pub eg: Eval,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ScoreTag;
-
-pub type ScoredGame = TaggedGame<ScoreTag>;
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-/// A piece of metadata which tags along with each board.
-/// In the Tomato engine, every board gets tagged with an `EvalCookie` which is used to quickly
-/// evaluate positions.
-pub struct EvalCookie {
-    /// The score of the position.
-    score: Score,
-    /// The quantity of non-pawn material on the board, measured in midgame centipawns.
-    mg_non_pawn_material: Eval,
-    /// The phase of the position.
-    phase: f32,
-}
-
-impl Tagger for ScoreTag {
-    type Tag = (Score, Eval);
-    type Cookie = EvalCookie;
-
-    /// Compute the change in scoring that a move made on a board will cause.
-    fn tag_move(m: Move, b: &Board, cookie: &Self::Cookie) -> Self::Tag {
-        let delta = pst::delta(b, m) + material::delta(b, m);
-        (delta, candidacy(b, m, delta, cookie.phase))
-    }
-
-    fn update_cookie(
-        m: Move,
-        tag: &Self::Tag,
-        b: &Board,
-        _b_after: &Board,
-        prev_cookie: &Self::Cookie,
-    ) -> Self::Cookie {
-        let score = match b.player {
-            Color::White => prev_cookie.score + tag.0,
-            Color::Black => prev_cookie.score - tag.0,
-        };
-        let mut mg_npm_delta = match m.promote_type() {
-            None => Eval::DRAW,
-            Some(pt) => material::value(pt).mg,
-        };
-        if b.is_move_capture(m) {
-            mg_npm_delta -= match b.type_at_square(m.to_square()) {
-                None | Some(Piece::Pawn) => Eval::DRAW,
-                Some(pt) => material::value(pt).mg,
-            }
-        };
-        let new_mg_npm = prev_cookie.mg_non_pawn_material + mg_npm_delta;
-        EvalCookie {
-            score,
-            mg_non_pawn_material: new_mg_npm,
-            phase: calculate_phase(new_mg_npm),
-        }
-    }
-
-    /// Compute a static, cumulative-invariant evaluation of a position.
-    /// It is much faster in search to use cumulative evaluation, but this should be used when
-    /// importing positions.
-    /// Static evaluation will not include the leaf rules (such as number of doubled pawns), as this
-    /// will be handled by `leaf_evaluate` at the end of the search tree.
-    fn init_cookie(b: &Board) -> Self::Cookie {
-        let mg_npm = {
-            let mut total = Eval::DRAW;
-            for pt in Piece::NON_PAWNS {
-                total += material::value(pt).mg * b[pt].len();
-            }
-            total
-        };
-        EvalCookie {
-            score: material::evaluate(b) + pst::evaluate(b),
-            mg_non_pawn_material: mg_npm,
-            phase: calculate_phase(mg_npm),
-        }
-    }
-}
-
 /// The cutoff for pure midgame material.
 pub const MG_LIMIT: Eval = Eval::centipawns(2408);
 
@@ -176,9 +85,18 @@ pub const EG_LIMIT: Eval = Eval::centipawns(1348);
 
 #[must_use]
 #[allow(clippy::module_name_repetitions)]
-/// Evaluate a leaf position on a game whose cumulative values have been computed correctly.
-pub fn leaf_evaluate(g: &ScoredGame) -> Eval {
-    g.cookie().score.blend(g.cookie().phase)
+/// Heuristically evaluate a leaf position on a game.
+pub fn leaf_evaluate(g: &Game) -> Eval {
+    let b = g.board();
+    let mg_npm = {
+        let mut total = Eval::DRAW;
+        for pt in Piece::NON_PAWNS {
+            total += material::value(pt).mg * b[pt].len();
+        }
+        total
+    };
+    let phase = calculate_phase(mg_npm);
+    (material::evaluate(b) + pst::evaluate(b)).blend(phase)
 }
 
 #[must_use]
@@ -590,30 +508,8 @@ impl Mul<u8> for Score {
 
 #[cfg(test)]
 mod tests {
-    use crate::base::movegen::GenMode;
 
     use super::*;
-
-    fn delta_helper(fen: &str) {
-        let mut g = ScoredGame::from_fen(fen).unwrap();
-        for (m, tag) in g.get_moves::<{ GenMode::All }>() {
-            g.make_move(m, &tag);
-            // println!("{g}");
-            assert_eq!(ScoreTag::init_cookie(g.board()), *g.cookie());
-            g.undo().unwrap();
-        }
-    }
-
-    #[test]
-    fn delta_captures() {
-        delta_helper("r1bq1b1r/ppp2kpp/2n5/3n4/2BPp3/2P5/PP3PPP/RNBQK2R b KQ d3 0 8");
-    }
-
-    #[test]
-    fn delta_promotion() {
-        // undoubling capture promotion is possible
-        delta_helper("r4bkr/pPpq2pp/2n1b3/3n4/2BPp3/2P5/1P3PPP/RNBQK2R w KQ - 1 13");
-    }
 
     #[test]
     #[allow(clippy::float_cmp)]
